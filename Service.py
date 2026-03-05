@@ -33,3 +33,8 @@ def enviarLogs(log,token):
     )
 
     print(f"status: {respuesta.status_code}") # --> muestra el estado de la respuesta 
+
+if __name__ == "__main__":
+
+    log,token = generaLogs() # --> codigo principal con sus parametros
+    enviarLogs(log,token)

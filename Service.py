@@ -28,12 +28,12 @@ def enviarLogs(log,token):
 
     respuesta = requests.post(
         "http://localhost:8000/logs", # --> respuesta (se envia el log) con la url el json del log y su header
-        json = {"logs": [log]},
+        json = log,
         headers = headers
     )
 
     print(f"status: {respuesta.status_code}") # --> muestra el estado de la respuesta 
-
+    print(respuesta.json())
 if __name__ == "__main__":
 
     log,token = generaLogs() # --> codigo principal con sus parametros

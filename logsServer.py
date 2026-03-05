@@ -1,4 +1,4 @@
-from fastapi import FastAPI,Depends,Query
+from fastapi import FastAPI,Depends,Query,Header,HTTPException
 from pydantic import BaseModel
 from typing import Optional
 import psycopg2
@@ -10,7 +10,25 @@ DBdata = {
     "user":"postgres",
     "password":"dan"
 }
+tokens = {
+    "token-autenticacion":      "auth-service",
+    "token-de-pago":           "payment-service",
+    "token-de-inventario":     "inventory-service",
+}
+
 app = FastAPI()
+
+def verificaTokens(authorization: str = Header(...,alias="Authorization")):
+
+    partes = authorization.split(" ")
+
+    if len(partes) != 2 or partes[0] != "Token":
+        raise HTTPException(status_code=401, detail="token invalido")
+    
+    if partes[1] not in tokens:
+        raise HTTPException(status_code=401, detail="token invalido")
+    
+    return tokens[partes[1]]
 
 def getDB():
     conn = psycopg2.connect(**DBdata)
@@ -28,7 +46,7 @@ class LogEntry(BaseModel):
     message:   str
 
 @app.get("/logs")
-def optenerDatos(db= Depends(getDB),
+def optenerDatos(db= Depends(getDB),servicio= Depends(verificaTokens),
                 timestamp_start: Optional[str]= Query(default=None),
                 timestamp_end: Optional[str]= Query(default=None),
                 received_at_start: Optional[str]= Query(default=None),
@@ -58,7 +76,7 @@ def optenerDatos(db= Depends(getDB),
     
 
 @app.post("/logs")
-def recibir_log(log: LogEntry, db = Depends(getDB)):
+def recibir_log(log: LogEntry, db = Depends(getDB), servicio=Depends(verificaTokens)):
     conn,cur = db
     cur.execute("INSERT INTO logs(timestamp,service,severity,message) VALUES (%s,%s,%s,%s)"
                 ,(log.timestamp,log.service,log.severity,log.message))
